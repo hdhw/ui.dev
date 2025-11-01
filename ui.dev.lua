@@ -36,7 +36,7 @@ function uidev:CreateWindow(options)
         Draggable = options.Draggable ~= false,
         Tabs = {},
         CurrentTab = nil,
-        Visible = options.Visible == nil and true or options.Visible -- Default to visible unless specified
+        Visible = options.Visible == nil and true or options.Visible
     }
 
     local ScreenGui = Instance.new("ScreenGui")
@@ -585,6 +585,375 @@ function uidev:CreateWindow(options)
             return Label
         end
 
+        function Tab:AddDropdown(options)
+            options = options or {}
+            local dropdownData = {
+                Name = options.Name or "Dropdown",
+                Options = options.Options or {"Option 1", "Option 2", "Option 3"},
+                Default = options.Default or options.Options[1],
+                Callback = options.Callback or function() end
+            }
+
+            local DropdownFrame = Instance.new("Frame")
+            DropdownFrame.Name = dropdownData.Name .. "Dropdown"
+            DropdownFrame.Parent = TabContent
+            DropdownFrame.BackgroundColor3 = Config.Colors.Secondary
+            DropdownFrame.BorderSizePixel = 0
+            DropdownFrame.Size = UDim2.new(1, -10, 0, 60)
+            DropdownFrame.ClipsDescendants = false
+            DropdownFrame.ZIndex = 2
+
+            local DropdownCorner = Instance.new("UICorner")
+            DropdownCorner.CornerRadius = UDim.new(0, 6)
+            DropdownCorner.Parent = DropdownFrame
+
+            local DropdownLabel = Instance.new("TextLabel")
+            DropdownLabel.Parent = DropdownFrame
+            DropdownLabel.BackgroundTransparency = 1
+            DropdownLabel.Position = UDim2.new(0, 12, 0, 5)
+            DropdownLabel.Size = UDim2.new(1, -12, 0, 20)
+            DropdownLabel.Font = Enum.Font.Gotham
+            DropdownLabel.Text = dropdownData.Name
+            DropdownLabel.TextColor3 = Config.Colors.Text
+            DropdownLabel.TextSize = 12
+            DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+            DropdownLabel.ZIndex = 3
+
+            local DropdownButton = Instance.new("TextButton")
+            DropdownButton.Parent = DropdownFrame
+            DropdownButton.BackgroundColor3 = Config.Colors.Primary
+            DropdownButton.BorderSizePixel = 0
+            DropdownButton.Position = UDim2.new(0, 12, 0, 30)
+            DropdownButton.Size = UDim2.new(1, -24, 0, 25)
+            DropdownButton.Font = Enum.Font.Gotham
+            DropdownButton.Text = dropdownData.Default .. "  ▼"
+            DropdownButton.TextColor3 = Config.Colors.Text
+            DropdownButton.TextSize = 11
+            DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            DropdownButton.ZIndex = 3
+
+            local DropdownButtonCorner = Instance.new("UICorner")
+            DropdownButtonCorner.CornerRadius = UDim.new(0, 4)
+            DropdownButtonCorner.Parent = DropdownButton
+
+            local DropdownButtonPadding = Instance.new("UIPadding")
+            DropdownButtonPadding.Parent = DropdownButton
+            DropdownButtonPadding.PaddingLeft = UDim.new(0, 8)
+
+            local DropdownContainer = Instance.new("Frame")
+            DropdownContainer.Name = "Container"
+            DropdownContainer.Parent = DropdownFrame
+            DropdownContainer.BackgroundColor3 = Config.Colors.Primary
+            DropdownContainer.BorderSizePixel = 0
+            DropdownContainer.Position = UDim2.new(0, 12, 0, 57)
+            DropdownContainer.Size = UDim2.new(1, -24, 0, 0)
+            DropdownContainer.Visible = false
+            DropdownContainer.ClipsDescendants = true
+            DropdownContainer.ZIndex = 4
+
+            local DropdownContainerCorner = Instance.new("UICorner")
+            DropdownContainerCorner.CornerRadius = UDim.new(0, 4)
+            DropdownContainerCorner.Parent = DropdownContainer
+
+            local DropdownList = Instance.new("UIListLayout")
+            DropdownList.Parent = DropdownContainer
+            DropdownList.FillDirection = Enum.FillDirection.Vertical
+            DropdownList.SortOrder = Enum.SortOrder.LayoutOrder
+            DropdownList.Padding = UDim.new(0, 2)
+
+            local DropdownListPadding = Instance.new("UIPadding")
+            DropdownListPadding.Parent = DropdownContainer
+            DropdownListPadding.PaddingTop = UDim.new(0, 4)
+            DropdownListPadding.PaddingBottom = UDim.new(0, 4)
+            DropdownListPadding.PaddingLeft = UDim.new(0, 4)
+            DropdownListPadding.PaddingRight = UDim.new(0, 4)
+
+            local isOpen = false
+            local currentSelection = dropdownData.Default
+
+            for _, option in ipairs(dropdownData.Options) do
+                local OptionButton = Instance.new("TextButton")
+                OptionButton.Parent = DropdownContainer
+                OptionButton.BackgroundColor3 = Config.Colors.Secondary
+                OptionButton.BorderSizePixel = 0
+                OptionButton.Size = UDim2.new(1, -8, 0, 25)
+                OptionButton.Font = Enum.Font.Gotham
+                OptionButton.Text = option
+                OptionButton.TextColor3 = Config.Colors.Text
+                OptionButton.TextSize = 11
+                OptionButton.TextXAlignment = Enum.TextXAlignment.Left
+                OptionButton.ZIndex = 5
+
+                local OptionCorner = Instance.new("UICorner")
+                OptionCorner.CornerRadius = UDim.new(0, 4)
+                OptionCorner.Parent = OptionButton
+
+                local OptionPadding = Instance.new("UIPadding")
+                OptionPadding.Parent = OptionButton
+                OptionPadding.PaddingLeft = UDim.new(0, 8)
+
+                OptionButton.MouseButton1Click:Connect(function()
+                    currentSelection = option
+                    DropdownButton.Text = option .. "  ▼"
+                    isOpen = false
+                    
+                    TweenService:Create(DropdownContainer, Config.Animations.Fast, {Size = UDim2.new(1, -24, 0, 0)}):Play()
+                    TweenService:Create(DropdownFrame, Config.Animations.Fast, {Size = UDim2.new(1, -10, 0, 60)}):Play()
+                    wait(0.15)
+                    DropdownContainer.Visible = false
+                    
+                    spawn(function()
+                        dropdownData.Callback(option)
+                    end)
+                end)
+
+                OptionButton.MouseEnter:Connect(function()
+                    TweenService:Create(OptionButton, Config.Animations.Fast, {BackgroundColor3 = Config.Colors.Accent}):Play()
+                end)
+
+                OptionButton.MouseLeave:Connect(function()
+                    TweenService:Create(OptionButton, Config.Animations.Fast, {BackgroundColor3 = Config.Colors.Secondary}):Play()
+                end)
+            end
+
+            DropdownButton.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                
+                if isOpen then
+                    local contentHeight = #dropdownData.Options * 27 + 8
+                    DropdownContainer.Visible = true
+                    TweenService:Create(DropdownContainer, Config.Animations.Fast, {Size = UDim2.new(1, -24, 0, contentHeight)}):Play()
+                    TweenService:Create(DropdownFrame, Config.Animations.Fast, {Size = UDim2.new(1, -10, 0, 60 + contentHeight)}):Play()
+                else
+                    TweenService:Create(DropdownContainer, Config.Animations.Fast, {Size = UDim2.new(1, -24, 0, 0)}):Play()
+                    TweenService:Create(DropdownFrame, Config.Animations.Fast, {Size = UDim2.new(1, -10, 0, 60)}):Play()
+                    wait(0.15)
+                    DropdownContainer.Visible = false
+                end
+            end)
+
+            return DropdownFrame
+        end
+
+        function Tab:AddColorPicker(options)
+            options = options or {}
+            local colorData = {
+                Name = options.Name or "Color Picker",
+                Default = options.Default or Color3.fromRGB(255, 255, 255),
+                Callback = options.Callback or function() end
+            }
+
+            local ColorFrame = Instance.new("Frame")
+            ColorFrame.Name = colorData.Name .. "ColorPicker"
+            ColorFrame.Parent = TabContent
+            ColorFrame.BackgroundColor3 = Config.Colors.Secondary
+            ColorFrame.BorderSizePixel = 0
+            ColorFrame.Size = UDim2.new(1, -10, 0, 35)
+
+            local ColorCorner = Instance.new("UICorner")
+            ColorCorner.CornerRadius = UDim.new(0, 6)
+            ColorCorner.Parent = ColorFrame
+
+            local ColorLabel = Instance.new("TextLabel")
+            ColorLabel.Parent = ColorFrame
+            ColorLabel.BackgroundTransparency = 1
+            ColorLabel.Position = UDim2.new(0, 12, 0, 0)
+            ColorLabel.Size = UDim2.new(1, -50, 1, 0)
+            ColorLabel.Font = Enum.Font.Gotham
+            ColorLabel.Text = colorData.Name
+            ColorLabel.TextColor3 = Config.Colors.Text
+            ColorLabel.TextSize = 12
+            ColorLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+            local ColorDisplay = Instance.new("Frame")
+            ColorDisplay.Parent = ColorFrame
+            ColorDisplay.BackgroundColor3 = colorData.Default
+            ColorDisplay.BorderSizePixel = 0
+            ColorDisplay.Position = UDim2.new(1, -30, 0, 7)
+            ColorDisplay.Size = UDim2.new(0, 21, 0, 21)
+
+            local ColorDisplayCorner = Instance.new("UICorner")
+            ColorDisplayCorner.CornerRadius = UDim.new(0, 4)
+            ColorDisplayCorner.Parent = ColorDisplay
+
+            local ColorButton = Instance.new("TextButton")
+            ColorButton.Parent = ColorDisplay
+            ColorButton.BackgroundTransparency = 1
+            ColorButton.Size = UDim2.new(1, 0, 1, 0)
+            ColorButton.Text = ""
+
+            local currentColor = colorData.Default
+
+            ColorButton.MouseButton1Click:Connect(function()
+                local r = math.random(0, 255)
+                local g = math.random(0, 255)
+                local b = math.random(0, 255)
+                currentColor = Color3.fromRGB(r, g, b)
+                
+                TweenService:Create(ColorDisplay, Config.Animations.Fast, {BackgroundColor3 = currentColor}):Play()
+                
+                spawn(function()
+                    colorData.Callback(currentColor)
+                end)
+            end)
+
+            return ColorFrame
+        end
+
+        function Tab:AddDivider(options)
+            options = options or {}
+            local dividerData = {
+                Text = options.Text or ""
+            }
+
+            local Divider = Instance.new("Frame")
+            Divider.Name = "Divider"
+            Divider.Parent = TabContent
+            Divider.BackgroundTransparency = 1
+            Divider.Size = UDim2.new(1, -10, 0, 20)
+
+            if dividerData.Text ~= "" then
+                local DividerLabel = Instance.new("TextLabel")
+                DividerLabel.Parent = Divider
+                DividerLabel.BackgroundTransparency = 1
+                DividerLabel.Size = UDim2.new(1, 0, 1, 0)
+                DividerLabel.Font = Enum.Font.GothamBold
+                DividerLabel.Text = dividerData.Text
+                DividerLabel.TextColor3 = Config.Colors.Accent
+                DividerLabel.TextSize = 11
+                DividerLabel.TextXAlignment = Enum.TextXAlignment.Left
+            else
+                local DividerLine = Instance.new("Frame")
+                DividerLine.Parent = Divider
+                DividerLine.BackgroundColor3 = Config.Colors.Primary
+                DividerLine.BorderSizePixel = 0
+                DividerLine.Position = UDim2.new(0, 0, 0.5, -1)
+                DividerLine.Size = UDim2.new(1, 0, 0, 2)
+
+                local DividerCorner = Instance.new("UICorner")
+                DividerCorner.CornerRadius = UDim.new(0, 1)
+                DividerCorner.Parent = DividerLine
+            end
+
+            return Divider
+        end
+
+        function Tab:AddKeybind(options)
+            options = options or {}
+            local keybindData = {
+                Name = options.Name or "Keybind",
+                Default = options.Default or Enum.KeyCode.E,
+                Callback = options.Callback or function() end
+            }
+
+            local KeybindFrame = Instance.new("Frame")
+            KeybindFrame.Name = keybindData.Name .. "Keybind"
+            KeybindFrame.Parent = TabContent
+            KeybindFrame.BackgroundColor3 = Config.Colors.Secondary
+            KeybindFrame.BorderSizePixel = 0
+            KeybindFrame.Size = UDim2.new(1, -10, 0, 35)
+
+            local KeybindCorner = Instance.new("UICorner")
+            KeybindCorner.CornerRadius = UDim.new(0, 6)
+            KeybindCorner.Parent = KeybindFrame
+
+            local KeybindLabel = Instance.new("TextLabel")
+            KeybindLabel.Parent = KeybindFrame
+            KeybindLabel.BackgroundTransparency = 1
+            KeybindLabel.Position = UDim2.new(0, 12, 0, 0)
+            KeybindLabel.Size = UDim2.new(1, -80, 1, 0)
+            KeybindLabel.Font = Enum.Font.Gotham
+            KeybindLabel.Text = keybindData.Name
+            KeybindLabel.TextColor3 = Config.Colors.Text
+            KeybindLabel.TextSize = 12
+            KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+            local KeybindButton = Instance.new("TextButton")
+            KeybindButton.Parent = KeybindFrame
+            KeybindButton.BackgroundColor3 = Config.Colors.Primary
+            KeybindButton.BorderSizePixel = 0
+            KeybindButton.Position = UDim2.new(1, -65, 0, 7)
+            KeybindButton.Size = UDim2.new(0, 53, 0, 21)
+            KeybindButton.Font = Enum.Font.Gotham
+            KeybindButton.Text = keybindData.Default.Name
+            KeybindButton.TextColor3 = Config.Colors.Text
+            KeybindButton.TextSize = 10
+
+            local KeybindButtonCorner = Instance.new("UICorner")
+            KeybindButtonCorner.CornerRadius = UDim.new(0, 4)
+            KeybindButtonCorner.Parent = KeybindButton
+
+            local currentKey = keybindData.Default
+            local listening = false
+
+            KeybindButton.MouseButton1Click:Connect(function()
+                listening = true
+                KeybindButton.Text = "..."
+                TweenService:Create(KeybindButton, Config.Animations.Fast, {BackgroundColor3 = Config.Colors.Accent}):Play()
+            end)
+
+            local inputConnection
+            inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+                    currentKey = input.KeyCode
+                    KeybindButton.Text = input.KeyCode.Name
+                    listening = false
+                    TweenService:Create(KeybindButton, Config.Animations.Fast, {BackgroundColor3 = Config.Colors.Primary}):Play()
+                elseif not gameProcessed and input.KeyCode == currentKey then
+                    spawn(function()
+                        keybindData.Callback()
+                    end)
+                end
+            end)
+
+            return KeybindFrame
+        end
+
+        function Tab:AddParagraph(options)
+            options = options or {}
+            local paragraphData = {
+                Title = options.Title or "Paragraph",
+                Content = options.Content or "This is a paragraph."
+            }
+
+            local ParagraphFrame = Instance.new("Frame")
+            ParagraphFrame.Name = "Paragraph"
+            ParagraphFrame.Parent = TabContent
+            ParagraphFrame.BackgroundColor3 = Config.Colors.Secondary
+            ParagraphFrame.BorderSizePixel = 0
+            ParagraphFrame.Size = UDim2.new(1, -10, 0, 65)
+
+            local ParagraphCorner = Instance.new("UICorner")
+            ParagraphCorner.CornerRadius = UDim.new(0, 6)
+            ParagraphCorner.Parent = ParagraphFrame
+
+            local ParagraphTitle = Instance.new("TextLabel")
+            ParagraphTitle.Parent = ParagraphFrame
+            ParagraphTitle.BackgroundTransparency = 1
+            ParagraphTitle.Position = UDim2.new(0, 12, 0, 5)
+            ParagraphTitle.Size = UDim2.new(1, -24, 0, 18)
+            ParagraphTitle.Font = Enum.Font.GothamBold
+            ParagraphTitle.Text = paragraphData.Title
+            ParagraphTitle.TextColor3 = Config.Colors.Text
+            ParagraphTitle.TextSize = 12
+            ParagraphTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+            local ParagraphContent = Instance.new("TextLabel")
+            ParagraphContent.Parent = ParagraphFrame
+            ParagraphContent.BackgroundTransparency = 1
+            ParagraphContent.Position = UDim2.new(0, 12, 0, 25)
+            ParagraphContent.Size = UDim2.new(1, -24, 1, -30)
+            ParagraphContent.Font = Enum.Font.Gotham
+            ParagraphContent.Text = paragraphData.Content
+            ParagraphContent.TextColor3 = Config.Colors.TextDark
+            ParagraphContent.TextSize = 11
+            ParagraphContent.TextWrapped = true
+            ParagraphContent.TextXAlignment = Enum.TextXAlignment.Left
+            ParagraphContent.TextYAlignment = Enum.TextYAlignment.Top
+
+            return ParagraphFrame
+        end
+
         return Tab
     end
 
@@ -593,27 +962,23 @@ function uidev:CreateWindow(options)
         TitleLabel.Text = newTitle
     end
 
-    -- Function to update UI visibility based on windowData.Visible
     local function updateUI()
         MainFrame.Visible = windowData.Visible
         Shadow.Visible = windowData.Visible
     end
 
-    -- Toggle function
     function Window:Toggle()
         windowData.Visible = not windowData.Visible
         updateUI()
         return windowData.Visible
     end
 
-    -- Connect Insert key to toggle
     local insertConnection
     insertConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
             Window:Toggle()
         end
     end)
-
 
     function Window:Destroy()
         if insertConnection then
@@ -623,7 +988,6 @@ function uidev:CreateWindow(options)
         ScreenGui:Destroy()
     end
     
-    -- Initialize visibility
     updateUI()
 
     return Window
